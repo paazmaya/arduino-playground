@@ -39,7 +39,7 @@ char previousPressedKey;
 const byte ROWS = 5; //five rows
  const byte COLS = 3; //three columns
  char keys[ROWS][COLS] = {
-   {'O','M','B'},
+   {'M','C','B'},
    {'1','2','3'},
    {'4','5','6'},
    {'7','8','9'},
