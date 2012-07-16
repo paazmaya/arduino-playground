@@ -46,7 +46,7 @@ const byte ROWS = 5; //five rows
    {'#','0','*'}
  };
  byte rowPins[ROWS] = {2, 6, 5, 4, 3}; //connect to the row pinouts of the keypad
- byte colPins[COLS] = {11, 10, 9}; //connect to the column pinouts of the keypad
+ byte colPins[COLS] = {12, 11, 10}; //connect to the column pinouts of the keypad
  
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
