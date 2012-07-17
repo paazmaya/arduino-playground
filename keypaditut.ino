@@ -282,6 +282,7 @@ void sendState(int btn, int state) {
 
 }
 
+
 void changeState(int btn, int state) {
   sendState(btn, state);
   
@@ -316,10 +317,17 @@ void changeState(int btn, int state) {
 // Needs refactoring to take care of different layouts...
 void sendDrag(int dragPos, int btn) {
   
-  int startCol = (dragPos / 4);
-  int endCol = (btn / 4);
-  int startRow = (dragPos % 4);
-  int endRow = (btn % 4);
+  /*
+  Serial.print(" dragPos: ");
+  Serial.print(dragPos);
+  Serial.print(" btn: ");
+  Serial.println(btn);
+  */
+  
+  int startCol = (dragPos / 3);
+  int endCol = (btn / 3);
+  int startRow = (dragPos % 3);
+  int endRow = (btn % 3);
   
   /*
   Serial.print(" - startCol: ");
@@ -332,19 +340,29 @@ void sendDrag(int dragPos, int btn) {
   Serial.println(endRow);
   */
   
-  // Switche tx and ty, thus made working with HELSINKI_LAUYOUT'
-  int ty = (endCol - startCol);
-  int tx = (endRow - startRow);
+  // Switche tx and ty, thus made working with HELSINKI_LAYOUT'
+  int deltaY = (endCol - startCol);
+  int deltaX = (endRow - startRow);
 
-  if (tx != 0) {
-    if (tx > 0) {
+  /*
+  Serial.print("deltaY ");
+  Serial.print(deltaY);
+  Serial.print(", deltaX ");
+  Serial.println(deltaX);
+  */
+  
+  // Movement between column items
+  if (deltaX != 0) {
+    if (deltaX > 0) {
       Serial.println("scrolled_right");
     } else {
       Serial.println("scrolled_left");
     }
   }
-  if (ty != 0) {
-    if (ty > 0) {
+  
+  // Movement between row items
+  if (deltaY != 0) {
+    if (deltaY > 0) {
       Serial.println("scrolled_down");
     } else {
       Serial.println("scrolled_up");
