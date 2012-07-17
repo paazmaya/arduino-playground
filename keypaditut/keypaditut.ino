@@ -35,6 +35,7 @@ int lastKey = 0;
 // Keypad related begin
 
 char previousPressedKey;
+boolean hasReleasedKey = false;
 
 const byte ROWS = 5; //five rows
  const byte COLS = 3; //three columns
@@ -82,17 +83,22 @@ void loop(){
   KeyState state = keypad.getState();
   if (state == PRESSED && key != NO_KEY) {
     previousPressedKey = key;
+    hasReleasedKey = false;
     Serial.print("pressed_");
     Serial.println(key);
   }
-  else if (state == RELEASED) {
+  else if (state == RELEASED && !hasReleasedKey) {
+    // Multiple RELEASED events occur when there had not been HOLD
     Serial.print("released_");
     Serial.println(previousPressedKey);
+    hasReleasedKey = true;
   }
+  /*
   else if (state == HOLD) {
     Serial.print("hold_");
     Serial.println(previousPressedKey);
   }
+  */
 }  
 
 void test() {
