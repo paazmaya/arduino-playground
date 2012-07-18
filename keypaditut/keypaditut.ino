@@ -39,6 +39,8 @@ unsigned long upTime = 0;
 // Time of the most recent DRAG event that got sent to Serial
 unsigned long lastDragTime = 0;
 int lastDragDirection;
+int previousDragButton; // Avoid sensor unreliability
+
 
 // Keypad related begin
 
@@ -313,12 +315,10 @@ void changeState(int btn, int state) {
    
 }
 
-
 // Scrolling should take place only at one direction at a time.
 // Should also check that within certin time limit, the direction cannot change 180 degrees.
 void sendDrag(int dragPos, int btn) {
     
-  
   int startCol = (dragPos / 3);
   int endCol = (btn / 3);
   int startRow = (dragPos % 3);
@@ -327,10 +327,11 @@ void sendDrag(int dragPos, int btn) {
   int deltaY = (endCol - startCol);
   int deltaX = (endRow - startRow);
   
-  if (deltaX != 0 || deltaY != 0) {
+  if ((deltaX != 0 || deltaY != 0) && previousDragButton != btn) {
     unsigned long currentTime = millis();
     int currentDirection;
     
+    previousDragButton = btn;
     
     // Movement between column items
     if (deltaX > 0) {
@@ -348,9 +349,25 @@ void sendDrag(int dragPos, int btn) {
       currentDirection = DRAG_UP;
     }
     
+    boolean turned = (lastDragDirection != currentDirection);
+    boolean turned90 = (lastDragDirection + 1 == currentDirection || lastDragDirection - 1 == currentDirection);
+    boolean turned180 = (lastDragDirection + 2 == currentDirection || lastDragDirection - 2 == currentDirection);
+    unsigned long timeDiff = currentTime - lastDragTime;
+    
+    /*
+    Serial.print("  turned:");
+    Serial.print(turned);
+    Serial.print("  turned90:");
+    Serial.print(turned90);
+    Serial.print("  turned180:");
+    Serial.print(turned180);
+    Serial.print("  timeDiff:");
+    Serial.print(timeDiff);
+    Serial.println("");
+    */
     
     // check time and direction
-    if (true) {
+    if (!turned || timeDiff > 120) {
       lastDragDirection = currentDirection;
       lastDragTime = currentTime;
       Serial.print("scrolled_");
