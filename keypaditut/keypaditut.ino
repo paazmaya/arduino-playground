@@ -318,7 +318,7 @@ void changeState(int btn, int state) {
 // Scrolling should take place only at one direction at a time.
 // Should also check that within certin time limit, the direction cannot change 180 degrees.
 void sendDrag(int dragPos, int btn) {
-    
+  
   int startCol = (dragPos / 3);
   int endCol = (btn / 3);
   int startRow = (dragPos % 3);
@@ -326,8 +326,18 @@ void sendDrag(int dragPos, int btn) {
   
   int deltaY = (endCol - startCol);
   int deltaX = (endRow - startRow);
+  boolean isPrev = previousDragButton == btn;
   
-  if ((deltaX != 0 || deltaY != 0) && previousDragButton != btn) {
+  /*
+  Serial.print("  deltaX:");
+  Serial.print(deltaX);
+  Serial.print("  deltaY:");
+  Serial.print(deltaY);
+  Serial.print("  isPrev:");
+  Serial.println(isPrev);
+  */
+  
+  if ((deltaX != 0 || deltaY != 0) && !isPrev) {
     unsigned long currentTime = millis();
     int currentDirection;
     
@@ -367,7 +377,7 @@ void sendDrag(int dragPos, int btn) {
     */
     
     // check time and direction
-    if (!turned || timeDiff > 120) {
+    if (!turned || timeDiff > 200) {
       lastDragDirection = currentDirection;
       lastDragTime = currentTime;
       Serial.print("scrolled_");
