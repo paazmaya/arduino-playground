@@ -8,13 +8,21 @@
 // 6 7 8
 // 9 10 11
 
+// Event types
 #define UP 0
 #define DOWN 1
 #define DRAG 2
 
+// Pin positions
 #define OPTIONS 14
 #define MENU 15
 #define BACK 16
+
+// Draggin directions
+#define DRAG_LEFT 0
+#define DRAG_UP 1
+#define DRAG_RIGHT 2
+#define DRAG_DOWN 3
 
 int irqpin = 13; // was 17 // Digital 2
 boolean touchStates[12]; // to keep track of the previous touch states
@@ -28,9 +36,9 @@ int dragPos = -1;
 unsigned long downTime = 0;
 unsigned long upTime = 0;
 
-// for test()
-int count = 0;
-int lastKey = 0;
+// Time of the most recent DRAG event that got sent to Serial
+unsigned long lastDragTime = 0;
+int lastDragDirection;
 
 // Keypad related begin
 
@@ -75,10 +83,13 @@ void setup(){
 
 void loop(){
   readTouchInputs();
-  readTactileInputs();
-  //test();
+  //readTactileInputs();
 
-  // Keypad related
+  keypadLoop();
+}  
+
+void keypadLoop() {
+    // Keypad related
   char key = keypad.getKey();
   KeyState state = keypad.getState();
   if (state == PRESSED && key != NO_KEY) {
@@ -99,28 +110,9 @@ void loop(){
     Serial.println(previousPressedKey);
   }
   */
-}  
-
-void test() {
-  count += 1;
-  lastKey += 1;
-  if (lastKey > 11) {
-    lastKey = 0;
-  }
-  if (count == 5) {
-    count = 0;
-    int r = random(0, 12);
-    Serial.print(r);
-    Serial.println(" (random)");
-    addToHistory(r);
-  } else {
-    Serial.println(lastKey);
-    addToHistory(lastKey);
-  }
-  printTouchHistory();
-  printUpHistory();
-  delay(1000);
 }
+
+
 
 void printTouchHistory() {
   for (int i = 0; i < 12; i++) {
@@ -290,6 +282,7 @@ void sendState(int btn, int state) {
 
 
 void changeState(int btn, int state) {
+  // Send touching state, can be touched_ or lifted_
   sendState(btn, state);
   
   if (btn >= 12) return;
@@ -320,58 +313,55 @@ void changeState(int btn, int state) {
    
 }
 
-// Needs refactoring to take care of different layouts...
+
+// Scrolling should take place only at one direction at a time.
+// Should also check that within certin time limit, the direction cannot change 180 degrees.
 void sendDrag(int dragPos, int btn) {
-  
-  /*
-  Serial.print(" dragPos: ");
-  Serial.print(dragPos);
-  Serial.print(" btn: ");
-  Serial.println(btn);
-  */
+    
   
   int startCol = (dragPos / 3);
   int endCol = (btn / 3);
   int startRow = (dragPos % 3);
   int endRow = (btn % 3);
   
-  /*
-  Serial.print(" - startCol: ");
-  Serial.print(startCol);
-  Serial.print(" endCol: ");
-  Serial.print(endCol);
-  Serial.print(" startRow: ");
-  Serial.print(startRow);
-  Serial.print(" endRow: ");
-  Serial.println(endRow);
-  */
-  
-  // Switche tx and ty, thus made working with HELSINKI_LAYOUT'
   int deltaY = (endCol - startCol);
   int deltaX = (endRow - startRow);
-
-  /*
-  Serial.print("deltaY ");
-  Serial.print(deltaY);
-  Serial.print(", deltaX ");
-  Serial.println(deltaX);
-  */
   
-  // Movement between column items
-  if (deltaX != 0) {
+  if (deltaX != 0 || deltaY != 0) {
+    unsigned long currentTime = millis();
+    int currentDirection;
+    
+    
+    // Movement between column items
     if (deltaX > 0) {
-      Serial.println("scrolled_right");
-    } else {
-      Serial.println("scrolled_left");
+      currentDirection = DRAG_RIGHT;
+    } 
+    else if (deltaX < 0) {
+      currentDirection = DRAG_LEFT;
     }
-  }
   
-  // Movement between row items
-  if (deltaY != 0) {
+    // Movement between row items
     if (deltaY > 0) {
-      Serial.println("scrolled_down");
-    } else {
-      Serial.println("scrolled_up");
+      currentDirection = DRAG_DOWN;
+    } 
+    else if (deltaY < 0) {
+      currentDirection = DRAG_UP;
+    }
+    
+    
+    // check time and direction
+    if (true) {
+      lastDragDirection = currentDirection;
+      lastDragTime = currentTime;
+      Serial.print("scrolled_");
+      
+      switch (currentDirection) {
+        case DRAG_RIGHT: Serial.println("right"); break;
+        case DRAG_LEFT: Serial.println("left"); break;
+        case DRAG_DOWN: Serial.println("down"); break;
+        case DRAG_UP: Serial.println("up"); break;
+      }
+      
     }
   }
 
@@ -393,10 +383,10 @@ boolean addToHistory(int k) {
 
 void checkHistory() {
 
-  int startCol = (touchHistory[1] / 4);
-  int endCol = (touchHistory[0] / 4);
-  int startRow = (touchHistory[1] % 4);
-  int endRow = (touchHistory[0] % 4);
+  int startCol = (touchHistory[1] / 3);
+  int endCol = (touchHistory[0] / 3);
+  int startRow = (touchHistory[1] % 3);
+  int endRow = (touchHistory[0] % 3);
   
   unsigned long time = (upHistory[0] - upHistory[1]);
   
