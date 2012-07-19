@@ -79,7 +79,7 @@ void setup(){
 
 void loop(){
   readTouchInputs();
-
+  delay(75);
   keypadLoop();
 }  
 
@@ -218,12 +218,13 @@ void changeState(int btn, int state) {
   sendState(btn, state);
   
   if (btn >= 12) return;
-  
+  /*
   Serial.print("  dragState:");
   Serial.print(dragState);
   Serial.print("  dragPos:");
   Serial.println(dragPos);
-    
+  */
+  
   if (state == DOWN) {
     downTime = currentTime;
 
@@ -233,7 +234,7 @@ void changeState(int btn, int state) {
       sendDrag(dragPos, btn);
     } 
     else {
-      if (btn != dragPos && (currentTime - upTime) < 200) {
+      if (btn != dragPos && (currentTime - upTime) < 300) {
         dragState = DRAG;
         sendDrag(dragPos, btn);
       } 
