@@ -27,11 +27,11 @@
 int irqpin = 13; // was 17 // Digital 2
 boolean touchStates[12]; // to keep track of the previous touch states
 
-int touchHistory[12];
-unsigned long upHistory[12];
+// button is the index, milliseconds is the value
+unsigned long historyTouched[12]; 
+unsigned long historyLifted[12];
 
 boolean dragState = UP;
-int downPos = -1;
 int dragPos = -1;
 unsigned long downTime = 0;
 unsigned long upTime = 0;
@@ -48,16 +48,16 @@ char previousPressedKey;
 boolean hasReleasedKey = false;
 
 const byte ROWS = 5; //five rows
- const byte COLS = 3; //three columns
- char keys[ROWS][COLS] = {
+const byte COLS = 3; //three columns
+char keys[ROWS][COLS] = {
    {'M','C','B'},
    {'1','2','3'},
    {'4','5','6'},
    {'7','8','9'},
    {'#','0','*'}
- };
- byte rowPins[ROWS] = {2, 6, 5, 4, 3}; //connect to the row pinouts of the keypad
- byte colPins[COLS] = {12, 11, 10}; //connect to the column pinouts of the keypad
+};
+byte rowPins[ROWS] = {2, 6, 5, 4, 3}; //connect to the row pinouts of the keypad
+byte colPins[COLS] = {12, 11, 10}; //connect to the column pinouts of the keypad
  
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
@@ -75,8 +75,8 @@ void setup(){
   Wire.begin();
 
   for (int i=0; i < 12; i++) {
-    touchHistory[i] = 0;
-    upHistory[i] = 0;
+    historyTouched[i] = 0;
+    historyLifted[i] = 0;
   }
   mpr121_setup();
   
@@ -85,7 +85,6 @@ void setup(){
 
 void loop(){
   readTouchInputs();
-  //readTactileInputs();
 
   keypadLoop();
 }  
@@ -116,17 +115,17 @@ void keypadLoop() {
 
 
 
-void printTouchHistory() {
+void printhistoryTouched() {
   for (int i = 0; i < 12; i++) {
-    Serial.print( touchHistory[i] );
+    Serial.print( historyTouched[i] );
     Serial.print(", ");
   }
   Serial.println("");
 }
 
-void printUpHistory() {
+void printhistoryLifted() {
   for (int i = 0; i < 12; i++) {
-    Serial.print( upHistory[i] );
+    Serial.print( historyLifted[i] );
     Serial.print(", ");
   }
   Serial.println("");
@@ -153,24 +152,18 @@ void readTouchInputs(){
         
         touchStates[i] = DOWN;
         
-//        if (millis() - upHistory[0] > 100) {
-//          // reset command (hack)
-//          Serial.println("5, 5,");
-//        }
       }
       else {
         if (touchStates[i] == DOWN) {
           //pin i is no longer being touched
-          if (addToHistory(key)) {
-            checkHistory();
-          }
+          
           changeState(key, UP);
         }
         touchStates[i] = UP;
       }
     }
-//    printTouchHistory();
-//    printUpHistory();
+//    printhistoryTouched();
+//    printhistoryLifted();
   }
 }
 
@@ -220,11 +213,15 @@ int convertKey(int k) {
   return rtn;
 }
 
+// Sensor too sensitive, time limit for same keys
 void sendState(int btn, int state) {
-
+  unsigned long currentTime = millis();
+  
   if (state == UP) {
+    historyLifted[ btn ] = currentTime;
     Serial.print("lifted_");
   } else {
+    historyTouched[ btn ] = currentTime;
     Serial.print("touched_");
   }
     
@@ -284,32 +281,43 @@ void sendState(int btn, int state) {
 
 
 void changeState(int btn, int state) {
+  unsigned long currentTime = millis();
+  
   // Send touching state, can be touched_ or lifted_
   sendState(btn, state);
   
   if (btn >= 12) return;
   
-  unsigned long currentTime = millis();
     
   if (state == DOWN) {
     downTime = currentTime;
 
+    
     if (dragState != UP) {
       dragState = DRAG;
       sendDrag(dragPos, btn);
-    } else {
+    } 
+    else {
       if (btn != dragPos && (currentTime - upTime) < 300) {
         dragState = DRAG;
         sendDrag(dragPos, btn);
-      } else {
-        downPos = btn;
+      } 
+      else {
         dragState = DOWN;
       }
     }
     dragPos = btn;
     
-  } else if (state == UP) {
+    
+  } 
+  else if (state == UP) {
     upTime = currentTime;
+    
+    
+    
+    
+    
+    
     dragState = UP;
   }
    
@@ -393,117 +401,6 @@ void sendDrag(int dragPos, int btn) {
   }
 
 }
-
-
-boolean addToHistory(int k) {
-  
-  if (k == touchHistory[0]) return false; // ignore duplicates
-
-  for (int idx = 11; idx >= 1; idx--) {
-    touchHistory[idx] = touchHistory[idx-1];
-    upHistory[idx] = upHistory[idx-1];
-  }
-  touchHistory[0] = k;
-  upHistory[0] = millis();
-  return true;
-}
-
-void checkHistory() {
-
-  int startCol = (touchHistory[1] / 3);
-  int endCol = (touchHistory[0] / 3);
-  int startRow = (touchHistory[1] % 3);
-  int endRow = (touchHistory[0] % 3);
-  
-  unsigned long time = (upHistory[0] - upHistory[1]);
-  
-//  if (time > 300) {
-//    // reset command (hack)
-//    Serial.println("15, 15,");
-//    return;
-//  }
-  
-//  Serial.println(upHistory[0]);
-//  Serial.println(upHistory[1]);
-//  Serial.println(time);
-  
-  int tx = (endCol - startCol); // * (200/time);
-  int ty = (endRow - startRow); // * (200/time);
-  
-//  int tx = 0;
-//  int ty = 0;
-//  int diff = touchHistory[0] - touchHistory[1];
-//  if (abs(diff) == 1) {
-//    if (diff > 0) {
-//      ty = 1;
-//    } else {
-//      ty = -1;
-//    }
-//  } else if (abs(diff) == 4) {
-//    if (diff > 0) {
-//      tx = 1;
-//    } else {
-//      tx = -1;
-//    }
-//  }
-  
-//  Serial.print(tx);
-//  Serial.print(",");
-//  Serial.print(ty);
-//  Serial.println(",");
-
-//  Serial.print(" (");
-//  Serial.print(time);
-//  Serial.println(")");
-  
-}
-
-void readTactileInputs(){
-  static boolean backPressed, menuPressed, optionPressed;
-  if(digitalRead(BACK)==HIGH){
-    if(backPressed == UP) {
-      changeState(BACK, DOWN);
-      backPressed = DOWN; 
-      delay(50);
-    }
-  } else {
-    if(backPressed == DOWN){
-      changeState(BACK, UP);
-      backPressed = UP;
-      delay(50);
-    } 
-  }
-
-  if(digitalRead(MENU)==HIGH){
-    if(menuPressed == UP){
-      changeState(MENU, DOWN);
-      menuPressed = DOWN; 
-      delay(50);
-    }
-  }
-  else{
-    if(menuPressed == DOWN){
-      changeState(MENU, UP);
-      menuPressed = UP;
-      delay(50);
-    } 
-  }
-
-  if(digitalRead(OPTIONS)==HIGH){
-    if(optionPressed == UP){
-      changeState(OPTIONS, DOWN);
-      optionPressed = DOWN; 
-      delay(50);
-    }
-  } else {
-    if(optionPressed == DOWN){
-      changeState(OPTIONS, UP);
-      optionPressed = UP;
-      delay(50);
-    } 
-  }
-}
-
 
 
 void mpr121_setup(void){
