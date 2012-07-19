@@ -125,6 +125,9 @@ void printHistoryLifted() {
   Serial.println("");
 }
 
+// Problem seems to be that when smae finger is touching two buttons
+// those buttons will trigger touched/lifted events in every loop
+// But while using different fingers to touch two buttons, that works as expected.
 void readTouchInputs(){
   if (!checkInterrupt()) {
 
@@ -137,8 +140,11 @@ void readTouchInputs(){
     uint16_t touched = ((MSB << 8) | LSB); //16bits that make up the touch states
     
     for (int i=0; i < 12; i++) {  // Check what electrodes were pressed
+    
+      // Touch state is updated every time in the list, but event passed only if it changed
       if (touched & (1<<i)) {
         
+        // Previously UP, thus change to DOWN
         if (touchStates[i] == UP) {
           changeState(i, DOWN);
         }          
@@ -147,11 +153,13 @@ void readTouchInputs(){
         
       }
       else {
+        // Previously DOWN, thus change to UP
         if (touchStates[i] == DOWN) {
           //pin i is no longer being touched
           
           changeState(i, UP);
         }
+        
         touchStates[i] = UP;
       }
     }
@@ -211,6 +219,10 @@ void changeState(int btn, int state) {
   
   if (btn >= 12) return;
   
+  Serial.print("  dragState:");
+  Serial.print(dragState);
+  Serial.print("  dragPos:");
+  Serial.println(dragPos);
     
   if (state == DOWN) {
     downTime = currentTime;
@@ -221,7 +233,7 @@ void changeState(int btn, int state) {
       sendDrag(dragPos, btn);
     } 
     else {
-      if (btn != dragPos && (currentTime - upTime) < 300) {
+      if (btn != dragPos && (currentTime - upTime) < 200) {
         dragState = DRAG;
         sendDrag(dragPos, btn);
       } 
@@ -235,11 +247,7 @@ void changeState(int btn, int state) {
   } 
   else if (state == UP) {
     upTime = currentTime;
-    
-    
-    
-    
-    
+        
     
     dragState = UP;
   }
