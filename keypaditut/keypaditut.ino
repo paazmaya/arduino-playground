@@ -2,12 +2,6 @@
 #include <Wire.h>
 #include <Keypad.h>
 
-#define HELSINKI_LAYOUT 1
-// 0 1 2
-// 3 4 5
-// 6 7 8
-// 9 10 11
-
 // Event types
 #define UP 0
 #define DOWN 1
@@ -115,7 +109,7 @@ void keypadLoop() {
 
 
 
-void printhistoryTouched() {
+void printHistoryTouched() {
   for (int i = 0; i < 12; i++) {
     Serial.print( historyTouched[i] );
     Serial.print(", ");
@@ -123,7 +117,7 @@ void printhistoryTouched() {
   Serial.println("");
 }
 
-void printhistoryLifted() {
+void printHistoryLifted() {
   for (int i = 0; i < 12; i++) {
     Serial.print( historyLifted[i] );
     Serial.print(", ");
@@ -132,7 +126,7 @@ void printhistoryLifted() {
 }
 
 void readTouchInputs(){
-  if(!checkInterrupt()){
+  if (!checkInterrupt()) {
 
     //read the touch state from the MPR121
     Wire.requestFrom(0x5A,2); 
@@ -142,12 +136,11 @@ void readTouchInputs(){
 
     uint16_t touched = ((MSB << 8) | LSB); //16bits that make up the touch states
     
-    for (int i=0; i < 12; i++){  // Check what electrodes were pressed
-      int key = convertKey(i);
-      if(touched & (1<<i)){
+    for (int i=0; i < 12; i++) {  // Check what electrodes were pressed
+      if (touched & (1<<i)) {
         
         if (touchStates[i] == UP) {
-          changeState(key, DOWN);
+          changeState(i, DOWN);
         }          
         
         touchStates[i] = DOWN;
@@ -157,60 +150,14 @@ void readTouchInputs(){
         if (touchStates[i] == DOWN) {
           //pin i is no longer being touched
           
-          changeState(key, UP);
+          changeState(i, UP);
         }
         touchStates[i] = UP;
       }
     }
-//    printhistoryTouched();
-//    printhistoryLifted();
+    //printHistoryTouched();
+    //printHistoryLifted();
   }
-}
-
-int convertKey(int k) {
-  // remap key to LONDON_LAYOUT
-  //  0 4 8
-  //  1 5 9
-  //  2 6 10
-  //  3 7 11
-  
-  int rtn = k;
-  if (HELSINKI_LAYOUT) {
-    return rtn;
-  }
-  
-  // Translate LONDON_LAYOUT to key index, starting from 0
-  switch (k) {
-  case 1:
-    rtn = 3;
-  case 2:
-    rtn = 6;
-  case 3:
-    rtn = 9;
-  case 4:
-    rtn = 1;
-  case 5:
-    rtn = 4;
-  case 6:
-    rtn = 7;
-    break;
-  case 7:
-    rtn = 10;
-    break;
-  case 8:
-    rtn = 2;
-    break;
-  case 9:
-    rtn = 5;
-    break;
-  case 10:
-    rtn = 8;
-    break;
-  case 11:
-    rtn = 11;
-    break;
-  }
-  return rtn;
 }
 
 // Sensor too sensitive, time limit for same keys
