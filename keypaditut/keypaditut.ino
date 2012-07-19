@@ -226,6 +226,8 @@ void sendState(int btn, int state) {
   }
     
   switch (btn) {
+    /*
+    // No hardware yet...
     case 14:
       Serial.println("options");
       break;
@@ -235,46 +237,20 @@ void sendState(int btn, int state) {
     case 16:
       Serial.println("back");
       break;
+    */
       
-    case 0:
-      Serial.println("itut_one");
-      break;
-    case 1:
-      Serial.println("itut_two");
-      break;
-    case 2:
-      Serial.println("itut_three");
-      break;
-    case 3:
-      Serial.println("itut_four");
-      break;
-    case 4:
-      Serial.println("itut_five");
-      break;
-    case 5:
-      Serial.println("itut_six");
-      break;
-    case 6:
-      Serial.println("itut_seven");
-      break;
-    case 7:
-      Serial.println("itut_eight");
-      break;
-    case 8:
-      Serial.println("itut_nine");
-      break;
     case 9:
-      Serial.println("itut_star");
+      Serial.println('*');
       break;
     case 10:
-      Serial.println("itut_zero");
+      Serial.println('0');
       break;
     case 11:
-      Serial.println("itut_hash");
+      Serial.println('#');
       break;
-
+      
     default:
-      Serial.println(btn);
+      Serial.println(btn + 1); // numbers
   }
 
 }
