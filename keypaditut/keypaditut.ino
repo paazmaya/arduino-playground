@@ -22,8 +22,13 @@ int irqpin = 13; // was 17 // Digital 2
 boolean touchStates[12]; // to keep track of the previous touch states
 
 // button is the index, milliseconds is the value
+// History of events sent
 unsigned long historyTouched[12]; 
 unsigned long historyLifted[12];
+
+// History of actual button states
+unsigned long stateTouched[12]; 
+unsigned long stateLifted[12];
 
 boolean dragState = UP;
 int dragPos = -1;
@@ -71,6 +76,8 @@ void setup(){
   for (int i=0; i < 12; i++) {
     historyTouched[i] = 0;
     historyLifted[i] = 0;
+    stateTouched[i] = 0;
+    stateLifted[i] = 0;
   }
   mpr121_setup();
   
@@ -139,14 +146,22 @@ void readTouchInputs(){
 
     uint16_t touched = ((MSB << 8) | LSB); //16bits that make up the touch states
     
+    // There should be no recurring event within 120 ms
+    unsigned long currentTime = millis();
+    int timeLimit = 220;
+    
     for (int i=0; i < 12; i++) {  // Check what electrodes were pressed
+    
     
       // Touch state is updated every time in the list, but event passed only if it changed
       if (touched & (1<<i)) {
         
         // Previously UP, thus change to DOWN
         if (touchStates[i] == UP) {
-          changeState(i, DOWN);
+          if (currentTime - stateTouched[i] > timeLimit) {
+            changeState(i, DOWN);
+          }
+          stateTouched[i] = currentTime;
         }          
         
         touchStates[i] = DOWN;
@@ -155,9 +170,12 @@ void readTouchInputs(){
       else {
         // Previously DOWN, thus change to UP
         if (touchStates[i] == DOWN) {
-          //pin i is no longer being touched
+          // pin i is no longer being touched
+          if (currentTime - stateLifted[i] > timeLimit) {
+            changeState(i, UP);
+          }
+          stateLifted[i] = currentTime;
           
-          changeState(i, UP);
         }
         
         touchStates[i] = UP;
