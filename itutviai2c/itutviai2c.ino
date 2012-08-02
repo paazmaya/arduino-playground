@@ -52,19 +52,12 @@ SoftI2CMaster i2c = SoftI2CMaster();
 
 
 void setup(){
-  /*
-  for (int i=0; i < 12; i++){
-    pinMode(i, INPUT);
-    digitalWrite(i, LOW); 
-  }
-  */
   
   pinMode(irqpin, INPUT);
-  digitalWrite(SDA_PIN, HIGH); //enable pullup resistor
   
   Serial.begin(9600);
   
-  //i2c.setPins( SCL_PIN,SDA_PIN, 0 );
+  i2c.setPins( SCL_PIN,SDA_PIN, 0 );
 
   delay(100);
   
@@ -104,24 +97,22 @@ void printHistoryLifted() {
   Serial.println("");
 }
 
+
+boolean checkInterrupt(void){
+  return digitalRead(irqpin);
+}
+
 // Problem seems to be that when smae finger is touching two buttons
 // those buttons will trigger touched/lifted events in every loop
 // But while using different fingers to touch two buttons, that works as expected.
 void readTouchInputs(){
   if (!checkInterrupt()) {
-    
-    i2c.beginTransmission( 0x5A );
-    i2c.send( 0x02 );
-    i2c.endTransmission();
-    
     //read the touch state from the MPR121
     i2c.requestFrom(0x5A); 
     byte LSB = i2c.receive();
     byte MSB = i2c.receiveLast();
     i2c.endTransmission();
     
-    
-
     
 
     uint16_t touched = ((MSB << 8) | LSB); //16bits that make up the touch states
@@ -397,14 +388,6 @@ void mpr121_setup(void){
   set_register(0x5A, ELE_CFG, 0x0C);  // Enables all 12 Electrodes
 
 }
-
-
-boolean checkInterrupt(void){
-  //Serial.print("checkInterrupt ");
-  //Serial.println(digitalRead(irqpin));
-  return digitalRead(irqpin);
-}
-
 
 void set_register(int address, unsigned char r, unsigned char v){
   i2c.beginTransmission(address);
