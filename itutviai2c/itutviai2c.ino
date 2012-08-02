@@ -396,9 +396,6 @@ void mpr121_setup(void){
   // Set ELE_CFG to 0x00 to return to standby mode
   set_register(0x5A, ELE_CFG, 0x0C);  // Enables all 12 Electrodes
 
-
-  set_register(0x5A, ELE_CFG, 0x0C);
-
 }
 
 
