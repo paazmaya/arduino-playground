@@ -91,6 +91,7 @@ void setup(){
   mpr121_setup();
   
   delay(1000);
+  
 }
 
 void loop(){
@@ -154,6 +155,7 @@ boolean checkInterrupt(void){
 void readTouchInputs(){
   if (!checkInterrupt()) {
     //read the touch state from the MPR121
+    i2c.beginTransmission(0x5A);
     i2c.requestFrom(0x5A); 
     byte LSB = i2c.receive();
     byte MSB = i2c.receiveLast();
