@@ -34,8 +34,11 @@ unsigned long historyLifted[12];
 unsigned long stateTouched[12]; 
 unsigned long stateLifted[12];
 
-boolean dragState = UP;
+// Keep the history of the previous drag position
 int dragPos = -1;
+
+boolean dragState = UP;
+
 unsigned long downTime = 0;
 unsigned long upTime = 0;
 
@@ -88,6 +91,7 @@ void setup(){
     stateTouched[i] = 0;
     stateLifted[i] = 0;
   }
+  
   mpr121_setup();
   
   delay(1000);
@@ -96,7 +100,7 @@ void setup(){
 
 void loop(){
   readTouchInputs();
-  delay(75);
+  delay(45);
   
   keypadLoop();
 }  
@@ -205,6 +209,50 @@ void readTouchInputs(){
   }
 }
 
+// Change the state of the given button. Only triggered when it does change.
+void changeState(int btn, int state) {
+  unsigned long currentTime = millis();
+  
+  // Send touching state, can be touched_ or lifted_
+  sendState(btn, state);
+  
+  if (btn >= 12) return;
+  /*
+  Serial.print("  dragState:");
+  Serial.print(dragState);
+  Serial.print("  dragPos:");
+  Serial.println(dragPos);
+  */
+  
+  if (state == DOWN) {
+    downTime = currentTime;
+
+    
+    if (dragState != UP) {
+      dragState = DRAG;
+      sendDrag(dragPos, btn);
+    } 
+    else {
+      if (btn != dragPos && (currentTime - upTime) < 300) {
+        dragState = DRAG;
+        sendDrag(dragPos, btn);
+      } 
+      else {
+        dragState = DOWN;
+      }
+    }
+    dragPos = btn;
+    
+    
+  } 
+  else if (state == UP) {
+    upTime = currentTime;
+    
+    dragState = UP;
+  }
+   
+}
+
 // Sensor too sensitive, time limit for same keys
 void sendState(int btn, int state) {
   unsigned long currentTime = millis();
@@ -248,62 +296,28 @@ void sendState(int btn, int state) {
 }
 
 
-void changeState(int btn, int state) {
-  unsigned long currentTime = millis();
-  
-  // Send touching state, can be touched_ or lifted_
-  sendState(btn, state);
-  
-  if (btn >= 12) return;
-  /*
-  Serial.print("  dragState:");
-  Serial.print(dragState);
-  Serial.print("  dragPos:");
-  Serial.println(dragPos);
-  */
-  
-  if (state == DOWN) {
-    downTime = currentTime;
-
-    
-    if (dragState != UP) {
-      dragState = DRAG;
-      sendDrag(dragPos, btn);
-    } 
-    else {
-      if (btn != dragPos && (currentTime - upTime) < 300) {
-        dragState = DRAG;
-        sendDrag(dragPos, btn);
-      } 
-      else {
-        dragState = DOWN;
-      }
-    }
-    dragPos = btn;
-    
-    
-  } 
-  else if (state == UP) {
-    upTime = currentTime;
-        
-    
-    dragState = UP;
-  }
-   
-}
-
 // Scrolling should take place only at one direction at a time.
 // Should also check that within certin time limit, the direction cannot change 180 degrees.
-void sendDrag(int dragPos, int btn) {
+// Allows turning the direction after 300 ms
+void sendDrag(int prev, int curr) {
   
-  int startCol = (dragPos / 3);
-  int endCol = (btn / 3);
-  int startRow = (dragPos % 3);
-  int endRow = (btn % 3);
+  // Now using two keys for checking direction. Should start using three, in order to catch the false initial direction
+  // when moving sideways...
+  
+  Serial.print("  prev: ");
+  Serial.print(prev);
+  Serial.print("  curr: ");
+  Serial.print(curr);
+  Serial.println();
+  
+  int startCol = (prev / 3);
+  int endCol = (curr / 3);
+  int startRow = (prev % 3);
+  int endRow = (curr % 3);
   
   int deltaY = (endCol - startCol);
   int deltaX = (endRow - startRow);
-  boolean isPrev = previousDragButton == btn;
+  boolean isPrev = previousDragButton == curr;
   
   /*
   Serial.print("  deltaX:");
@@ -318,15 +332,8 @@ void sendDrag(int dragPos, int btn) {
     unsigned long currentTime = millis();
     int currentDirection;
     
-    previousDragButton = btn;
+    previousDragButton = curr;
     
-    // Movement between column items
-    if (deltaX > 0) {
-      currentDirection = DRAG_RIGHT;
-    } 
-    else if (deltaX < 0) {
-      currentDirection = DRAG_LEFT;
-    }
   
     // Movement between row items
     if (deltaY > 0) {
@@ -336,12 +343,20 @@ void sendDrag(int dragPos, int btn) {
       currentDirection = DRAG_UP;
     }
     
+    // Movement between column items
+    if (deltaX > 0) {
+      currentDirection = DRAG_RIGHT;
+    } 
+    else if (deltaX < 0) {
+      currentDirection = DRAG_LEFT;
+    }
+    
     boolean turned = (lastDragDirection != currentDirection);
     boolean turned90 = (lastDragDirection + 1 == currentDirection || lastDragDirection - 1 == currentDirection);
     boolean turned180 = (lastDragDirection + 2 == currentDirection || lastDragDirection - 2 == currentDirection);
     unsigned long timeDiff = currentTime - lastDragTime;
     
-    /*
+    
     Serial.print("  turned:");
     Serial.print(turned);
     Serial.print("  turned90:");
@@ -351,10 +366,10 @@ void sendDrag(int dragPos, int btn) {
     Serial.print("  timeDiff:");
     Serial.print(timeDiff);
     Serial.println("");
-    */
+    
     
     // check time and direction
-    if (!turned || timeDiff > 200) {
+    if (!turned || timeDiff > 500) {
       lastDragDirection = currentDirection;
       lastDragTime = currentTime;
       Serial.print("scrolled_");
