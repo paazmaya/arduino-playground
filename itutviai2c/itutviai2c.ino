@@ -20,12 +20,11 @@
 #define DRAG_RIGHT 2
 #define DRAG_DOWN 3
 
-#define SDA_PIN 0 // The software SDA pin number.
-#define SCL_PIN 1 // The software SCL pin number.
+#define SDA_PIN 19 // The software SDA pin number.
+#define SCL_PIN 18 // The software SCL pin number.
 
+#define IRQ_PIN 20 // interrupts at this pin
 
-
-int irqpin = 2;
 boolean touchStates[12]; // to keep track of the previous touch states
 
 // button is the index, milliseconds is the value
@@ -53,7 +52,7 @@ SoftI2CMaster i2c = SoftI2CMaster();
 
 void setup(){
   
-  pinMode(irqpin, INPUT);
+  pinMode(IRQ_PIN, INPUT);
   
   Serial.begin(9600);
   
@@ -99,7 +98,7 @@ void printHistoryLifted() {
 
 
 boolean checkInterrupt(void){
-  return digitalRead(irqpin);
+  return digitalRead(IRQ_PIN);
 }
 
 // Problem seems to be that when smae finger is touching two buttons
