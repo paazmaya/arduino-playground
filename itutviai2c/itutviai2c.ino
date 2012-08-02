@@ -1,6 +1,8 @@
+
+#include "SoftI2CMaster.h"
+
+
 #include "mpr121.h"
-#include <Wire.h>
-#include <Keypad.h>
 
 // Event types
 #define UP 0
@@ -18,7 +20,12 @@
 #define DRAG_RIGHT 2
 #define DRAG_DOWN 3
 
-int irqpin = 13; // was 17 // Digital 2
+#define SDA_PIN 0 // The software SDA pin number.
+#define SCL_PIN 1 // The software SCL pin number.
+
+
+
+int irqpin = 2;
 boolean touchStates[12]; // to keep track of the previous touch states
 
 // button is the index, milliseconds is the value
@@ -41,38 +48,27 @@ int lastDragDirection;
 int previousDragButton; // Avoid sensor unreliability
 
 
-// Keypad related begin
+SoftI2CMaster i2c = SoftI2CMaster();
 
-char previousPressedKey;
-boolean hasReleasedKey = false;
-
-const byte ROWS = 5; //five rows
-const byte COLS = 3; //three columns
-char keys[ROWS][COLS] = {
-   {'M','C','B'},
-   {'1','2','3'},
-   {'4','5','6'},
-   {'7','8','9'},
-   {'#','0','*'}
-};
-byte rowPins[ROWS] = {2, 6, 5, 4, 3}; //connect to the row pinouts of the keypad
-byte colPins[COLS] = {12, 11, 10}; //connect to the column pinouts of the keypad
- 
-Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
-
-
-// Keypad related ends
 
 void setup(){
-  pinMode(irqpin, INPUT);
-  digitalWrite(irqpin, HIGH); //enable pullup resistor
-  for (int i=14; i <17; i++){
+  /*
+  for (int i=0; i < 12; i++){
     pinMode(i, INPUT);
     digitalWrite(i, LOW); 
   }
+  */
+  
+  pinMode(irqpin, INPUT);
+  digitalWrite(SDA_PIN, HIGH); //enable pullup resistor
+  
   Serial.begin(9600);
-  Wire.begin();
+  
+  //i2c.setPins( SCL_PIN,SDA_PIN, 0 );
 
+  delay(100);
+  
+  
   for (int i=0; i < 12; i++) {
     historyTouched[i] = 0;
     historyLifted[i] = 0;
@@ -87,32 +83,8 @@ void setup(){
 void loop(){
   readTouchInputs();
   delay(75);
-  keypadLoop();
 }  
 
-void keypadLoop() {
-    // Keypad related
-  char key = keypad.getKey();
-  KeyState state = keypad.getState();
-  if (state == PRESSED && key != NO_KEY) {
-    previousPressedKey = key;
-    hasReleasedKey = false;
-    Serial.print("pressed_");
-    Serial.println(key);
-  }
-  else if (state == RELEASED && !hasReleasedKey) {
-    // Multiple RELEASED events occur when there had not been HOLD
-    Serial.print("released_");
-    Serial.println(previousPressedKey);
-    hasReleasedKey = true;
-  }
-  /*
-  else if (state == HOLD) {
-    Serial.print("hold_");
-    Serial.println(previousPressedKey);
-  }
-  */
-}
 
 
 
@@ -137,12 +109,20 @@ void printHistoryLifted() {
 // But while using different fingers to touch two buttons, that works as expected.
 void readTouchInputs(){
   if (!checkInterrupt()) {
-
+    
+    i2c.beginTransmission( 0x5A );
+    i2c.send( 0x02 );
+    i2c.endTransmission();
+    
     //read the touch state from the MPR121
-    Wire.requestFrom(0x5A,2); 
+    i2c.requestFrom(0x5A); 
+    byte LSB = i2c.receive();
+    byte MSB = i2c.receiveLast();
+    i2c.endTransmission();
+    
+    
 
-    byte LSB = Wire.read();
-    byte MSB = Wire.read();
+    
 
     uint16_t touched = ((MSB << 8) | LSB); //16bits that make up the touch states
     
@@ -417,27 +397,23 @@ void mpr121_setup(void){
   set_register(0x5A, ELE_CFG, 0x0C);  // Enables all 12 Electrodes
 
 
-  // Section F
-  // Enable Auto Config and auto Reconfig
-  /*set_register(0x5A, ATO_CFG0, 0x0B);
-   set_register(0x5A, ATO_CFGU, 0xC9);  // USL = (Vdd-0.7)/vdd*256 = 0xC9 @3.3V   set_register(0x5A, ATO_CFGL, 0x82);  // LSL = 0.65*USL = 0x82 @3.3V
-   set_register(0x5A, ATO_CFGT, 0xB5);*/  // Target = 0.9*USL = 0xB5 @3.3V
-
   set_register(0x5A, ELE_CFG, 0x0C);
 
 }
 
 
 boolean checkInterrupt(void){
+  //Serial.print("checkInterrupt ");
+  //Serial.println(digitalRead(irqpin));
   return digitalRead(irqpin);
 }
 
 
 void set_register(int address, unsigned char r, unsigned char v){
-  Wire.beginTransmission(address);
-  Wire.write(r);
-  Wire.write(v);
-  Wire.endTransmission();
+  i2c.beginTransmission(address);
+  i2c.send(r);
+  i2c.send(v);
+  i2c.endTransmission();
 }
 
 
