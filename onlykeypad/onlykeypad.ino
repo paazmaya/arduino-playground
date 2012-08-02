@@ -1,13 +1,13 @@
 #include <Keypad.h>
 
 
-// Keypad related begin
+// -- Keypad related begin
 
 char previousPressedKey;
 boolean hasReleasedKey = false;
 
 const byte ROWS = 5; //five rows
-const byte COLS = 3; //three columns
+const byte COLS = 4; //three columns
 char keys[ROWS][COLS] = {
    {'M','C','B'},
    {'1','2','3'},
@@ -16,12 +16,10 @@ char keys[ROWS][COLS] = {
    {'#','0','*'}
 };
 byte rowPins[ROWS] = {4, 0, 1, 2, 3}; //connect to the row pinouts of the keypad
-byte colPins[COLS] = {5, 6, 7}; //connect to the column pinouts of the keypad
+byte colPins[COLS] = {5, 6, 7, 8}; //connect to the column pinouts of the keypad
  
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
-
-
-// Keypad related ends
+// -- Keypad related ends
 
 void setup(){
   Serial.begin(9600);
