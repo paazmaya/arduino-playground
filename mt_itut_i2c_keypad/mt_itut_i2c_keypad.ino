@@ -37,6 +37,9 @@ unsigned long stateLifted[12];
 // Keep the history of the previous drag position
 int dragPos = -1;
 
+// Four last drag buttons
+int dragBtnHistory[4];
+
 boolean dragState = UP;
 
 unsigned long downTime = 0;
@@ -90,6 +93,10 @@ void setup(){
     historyLifted[i] = 0;
     stateTouched[i] = 0;
     stateLifted[i] = 0;
+  }
+  
+  for (int j = 0; j < 4; ++j) {
+    dragBtnHistory[j] = -1;
   }
   
   mpr121_setup();
@@ -303,75 +310,88 @@ void sendDrag(int prev, int curr) {
   
   // Now using two keys for checking direction. Should start using three, in order to catch the false initial direction
   // when moving sideways...
+  dragBtnHistory[0] = dragBtnHistory[1];
+  dragBtnHistory[1] = dragBtnHistory[2];
+  dragBtnHistory[2] = dragBtnHistory[3];
+  dragBtnHistory[3] = curr;
   
-  Serial.print("  prev: ");
-  Serial.print(prev);
-  Serial.print("  curr: ");
-  Serial.print(curr);
-  Serial.println();
-  
+   
+  int histCol = (dragBtnHistory[0] / 3);
+  int prevCol = (dragBtnHistory[1] / 3);
   int startCol = (prev / 3);
   int endCol = (curr / 3);
+  int histRow = (dragBtnHistory[0] % 3);
+  int prevRow = (dragBtnHistory[1] % 3);
   int startRow = (prev % 3);
   int endRow = (curr % 3);
   
-  int deltaY = (endCol - startCol);
-  int deltaX = (endRow - startRow);
-  boolean isPrev = previousDragButton == curr;
-  
   /*
-  Serial.print("  deltaX:");
-  Serial.print(deltaX);
-  Serial.print("  deltaY:");
-  Serial.print(deltaY);
-  Serial.print("  isPrev:");
-  Serial.println(isPrev);
+  Serial.print("  cols: ");
+  Serial.print(histCol);
+  Serial.print(" ");
+  Serial.print(prevCol);
+  Serial.print(" ");
+  Serial.print(startCol);
+  Serial.print(" ");
+  Serial.print(endCol);
+  Serial.print(" -  rows: ");
+  Serial.print(histRow);
+  Serial.print(" ");
+  Serial.print(prevRow);
+  Serial.print(" ");
+  Serial.print(startRow);
+  Serial.print(" ");
+  Serial.print(endRow);
+  Serial.println();
   */
   
-  if ((deltaX != 0 || deltaY != 0) && !isPrev) {
-    unsigned long currentTime = millis();
-    int currentDirection;
-    
-    previousDragButton = curr;
-    
+  // As there are only three columns but four rows, columns win when choosing between
+  // vertical and horizontal scroll
   
-    // Movement between row items
-    if (deltaY > 0) {
-      currentDirection = DRAG_DOWN;
-    } 
-    else if (deltaY < 0) {
-      currentDirection = DRAG_UP;
-    }
+  // Debugging 
+  int isUp = 0;
+  int isDown = 0;
+  int isLeft = 0;
+  int isRight = 0;
+  
+  
+  int currentDirection = -1;
+  
+  // When all colums are different between each other, then it is horizontal
+  // if the two values in the middle are the same, then check the fourth...
+  if ((prevCol > startCol || (prevCol == startCol && histCol > prevCol)) && startCol > endCol && prevCol > endCol) {
+    isUp = 1;
+    currentDirection = DRAG_UP;
+  }
+  if ((prevCol < startCol || (prevCol == startCol && histCol < prevCol)) && startCol < endCol && prevCol < endCol) {
+    isDown = 1;
+    currentDirection = DRAG_DOWN;
+  }
+  if ((prevRow > startRow || (prevRow == startRow && histRow > prevRow)) && startRow > endRow && prevRow > endRow) {
+    isLeft = 1;
+    currentDirection = DRAG_LEFT;
+  }
+  if ((prevRow < startRow || (prevRow == startRow && histRow < prevRow)) && startRow < endRow && prevRow < endRow) {
+    isRight = 1;
+    currentDirection = DRAG_RIGHT;
+  }
+  /*
+  Serial.print("  isUp: ");
+  Serial.print(isUp);
+  Serial.print("  isDown: ");
+  Serial.print(isDown);
+  Serial.print("  isLeft: ");
+  Serial.print(isLeft);
+  Serial.print("  isRight: ");
+  Serial.print(isRight);
+  Serial.println();
+  */
+  
+  // Which direction would it be then?
+  if (currentDirection != -1) {
     
-    // Movement between column items
-    if (deltaX > 0) {
-      currentDirection = DRAG_RIGHT;
-    } 
-    else if (deltaX < 0) {
-      currentDirection = DRAG_LEFT;
-    }
-    
-    boolean turned = (lastDragDirection != currentDirection);
-    boolean turned90 = (lastDragDirection + 1 == currentDirection || lastDragDirection - 1 == currentDirection);
-    boolean turned180 = (lastDragDirection + 2 == currentDirection || lastDragDirection - 2 == currentDirection);
-    unsigned long timeDiff = currentTime - lastDragTime;
-    
-    
-    Serial.print("  turned:");
-    Serial.print(turned);
-    Serial.print("  turned90:");
-    Serial.print(turned90);
-    Serial.print("  turned180:");
-    Serial.print(turned180);
-    Serial.print("  timeDiff:");
-    Serial.print(timeDiff);
-    Serial.println("");
-    
-    
-    // check time and direction
-    if (!turned || timeDiff > 500) {
       lastDragDirection = currentDirection;
-      lastDragTime = currentTime;
+      lastDragTime = millis();
       Serial.print("scrolled_");
       
       switch (currentDirection) {
@@ -380,8 +400,6 @@ void sendDrag(int prev, int curr) {
         case DRAG_DOWN: Serial.println("down"); break;
         case DRAG_UP: Serial.println("up"); break;
       }
-      
-    }
   }
 
 }
