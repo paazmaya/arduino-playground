@@ -107,10 +107,9 @@ void setup(){
 
 void loop(){
   readTouchInputs();
-  delay(45);
   
   keypadLoop();
-}  
+}
 
 
 
@@ -172,6 +171,7 @@ void readTouchInputs(){
     byte MSB = i2c.receiveLast();
     i2c.endTransmission();
     
+    // Problem is that only two bytes are read while the buffer keeps increasing... how to flush?
     
 
     uint16_t touched = ((MSB << 8) | LSB); //16bits that make up the touch states
