@@ -107,8 +107,9 @@ void setup(){
 
 void loop(){
   readTouchInputs();
-  
+  delay(25);
   keypadLoop();
+  delay(25);
 }
 
 
@@ -129,10 +130,12 @@ void keypadLoop() {
     Serial.println(previousPressedKey);
     hasReleasedKey = true;
   }
+  /*
+  UI not implemented...
   else if (state == HOLD) {
     Serial.print("hold_");
     Serial.println(previousPressedKey);
-  }
+  }*/
 }
 
 
@@ -171,9 +174,6 @@ void readTouchInputs(){
     byte MSB = i2c.receiveLast();
     i2c.endTransmission();
     
-    // Problem is that only two bytes are read while the buffer keeps increasing... how to flush?
-    
-
     uint16_t touched = ((MSB << 8) | LSB); //16bits that make up the touch states
     
     // There should be no recurring event within 120 ms
