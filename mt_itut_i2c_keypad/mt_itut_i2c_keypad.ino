@@ -178,7 +178,7 @@ void readTouchInputs(){
     
     // There should be no recurring event within 120 ms
     unsigned long currentTime = millis();
-    int timeLimit = 120;
+    int timeLimit = 80;
     
     for (int i=0; i < 12; i++) {  // Check what electrodes were pressed
     
@@ -221,7 +221,7 @@ void changeState(int btn, int state) {
   unsigned long currentTime = millis();
   
   // Send touching state, can be touched_ or lifted_
-  sendState(btn, state);
+  //sendState(btn, state);
   
   if (btn >= 12) return;
   /*
@@ -363,15 +363,15 @@ void sendDrag(int prev, int curr) {
     isUp = 1;
     currentDirection = DRAG_UP;
   }
-  if ((prevCol < startCol || (prevCol == startCol && histCol < prevCol)) && startCol < endCol && prevCol < endCol) {
+  else if ((prevCol < startCol || (prevCol == startCol && histCol < prevCol)) && startCol < endCol && prevCol < endCol) {
     isDown = 1;
     currentDirection = DRAG_DOWN;
   }
-  if ((prevRow > startRow || (prevRow == startRow && histRow > prevRow)) && startRow > endRow && prevRow > endRow) {
+  else if ((prevRow > startRow || (prevRow == startRow && histRow > prevRow)) && startRow > endRow && prevRow > endRow) {
     isLeft = 1;
     currentDirection = DRAG_LEFT;
   }
-  if ((prevRow < startRow || (prevRow == startRow && histRow < prevRow)) && startRow < endRow && prevRow < endRow) {
+  else if ((prevRow < startRow || (prevRow == startRow && histRow < prevRow)) && startRow < endRow && prevRow < endRow) {
     isRight = 1;
     currentDirection = DRAG_RIGHT;
   }
