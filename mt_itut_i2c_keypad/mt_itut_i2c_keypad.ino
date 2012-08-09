@@ -107,9 +107,9 @@ void setup(){
 
 void loop(){
   readTouchInputs();
-  delay(25);
+  delay(15);
   keypadLoop();
-  delay(25);
+  delay(15);
 }
 
 
