@@ -312,7 +312,7 @@ void sendDrag(int prev, int curr) {
   // when moving sideways...
   dragBtnHistory[0] = dragBtnHistory[1];
   dragBtnHistory[1] = dragBtnHistory[2];
-  dragBtnHistory[2] = dragBtnHistory[3];
+  dragBtnHistory[2] = prev;
   dragBtnHistory[3] = curr;
   
    
@@ -357,8 +357,8 @@ void sendDrag(int prev, int curr) {
   
   int currentDirection = -1;
   
-  // When all colums are different between each other, then it is horizontal
-  // if the two values in the middle are the same, then check the fourth...
+  // If there are all three columns passed during four most recent touch points, it shall be horizontal scroll.
+  
   if ((prevCol > startCol || (prevCol == startCol && histCol > prevCol)) && startCol > endCol && prevCol > endCol) {
     isUp = 1;
     currentDirection = DRAG_UP;
