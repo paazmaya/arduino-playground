@@ -2,7 +2,7 @@
 
 Trying out different scripts to make things happen with Arduino hardware.
 
-[![Analytics](https://ga-beacon.appspot.com/UA-2643697-15/arduino-playground/index)](https://github.com/igrigorik/ga-beacon)
+[![Analytics](https://ga-beacon.appspot.com/UA-2643697-15/arduino-playground/index?flat)](https://github.com/igrigorik/ga-beacon)
 
 
 ## onlykeypad
