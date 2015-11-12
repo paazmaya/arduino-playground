@@ -31,3 +31,7 @@ v 2.0
 ## mt_itut_i2c_keypad
 
 Combines 'onlykeypad' and 'itutviai2c'
+
+## License
+
+Copyright (c) [Juga Paazmaya <paazmaya@yahoo.com>](http://paazmaya.fi)
