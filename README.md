@@ -34,4 +34,4 @@ Combines 'onlykeypad' and 'itutviai2c'
 
 ## License
 
-Copyright (c) [Juga Paazmaya](http://paazmaya.fi) <paazmaya@yahoo.com>
+Copyright (c) [Juga Paazmaya](https://paazmaya.fi) <paazmaya@yahoo.com>
